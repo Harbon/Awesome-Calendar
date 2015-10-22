@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+        <html>
+<head>
+    <title>RoundTimePicker</title>
+    <meta charset="utf-8" >
+    <style>
+        .container{
+            width: 1300px;
+            height: 1300px;
+            position: relative;
+        }
+#RoundTimePicker{
+    position: absolute;
+}
+        #number{
+            position:absolute;
+        }
+        #dateShow{
+            position: absolute;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+<canvas id = "RoundTimePicker" width="1300px" height="1300px" ></canvas>
+    <canvas id = "dateShow" width = "1300px" height="1300px"></canvas>
+<canvas id = "number" width="1300px" height="1300px"></canvas>
+
+</div>
+<script>
+    var arcGeneratorOfYear;
+    var arcGeneratorOfMonth;
+    var arcGeneratorOfDate;
+    var arcGeneratorOfHour;
+    var textGeneratorOfYear;
+    var textGeneratorOfMonth;
+    var textGeneratorOfDate;
+    var textGeneratorOfHour;
+    var canvas = document.getElementById("RoundTimePicker");
+    var context_canvas = canvas.getContext('2d');
+    var canvasOfMemory = document.createElement("canvas");
+    canvasOfMemory.width = canvas.width;
+    canvasOfMemory.height = canvas.height;
+    var context_canvasOfMemory = canvasOfMemory.getContext('2d');
+    var canvasNumber = document.getElementById("number");
+    var contextNumber = canvasNumber.getContext('2d');
+    var canvasNumberOfMemory = document.createElement('canvas');
+    canvasNumberOfMemory.width = canvasNumber.width;
+    canvasNumberOfMemory.height = canvasNumber.height;
+    var contextNumberOfMemory = canvasNumberOfMemory.getContext('2d');
+    var canvasDateShow = document.getElementById("dateShow");
+    var contextOfDateShow = canvasDateShow.getContext("2d")
+//    var player = new Audio("402.mp3")
+//    player.load();
+    var b = true;
+
+    var RGB = {
+        R:127,
+        G:122,
+        B:143
+    };
+    <!--工具类-->
+
+    var utils = {
+//        js  颜色RGB函数
+        jsRGB: function (r, g, b) {
+            return (r*65536+g*256+b).toString(16);
+        }
+    };
+
+
+
+
+
+
+//------------------------------------------------画圆弧---------------------------------------------------
+//    360度圆弧切割器
+    var arcGenerator = function () {
+//        默认属性值
+        this.pieceColor = {
+            R:127,
+            G:122,
+            B:143
+        };
+        this.startColor = {
+            R:127,
+            G:122,
+            B:143
+        };//开始颜色值
+        this.startAngle = Math.PI*3/2;
+        this.totalColor = 112;//最后颜色值减去开始颜色值
+        this.totalPieces = 4;//总切割数
+        this.lineWidth = 50;//圆弧厚度
+        this.averageOfColorGradient = 112/this.totalPieces;//平均每次切割颜色值增加值
+        this.averageOfDegreeGradient = 2*Math.PI/this.totalPieces;//平均每次切割角度增加值
+        this.cXOfArc = 600;//被切割圆圆心X坐标
+        this.cYOfArc = 400;//被切割圆圆心Y坐标
+        this.radius = 200;//被切割圆半径
+        this.hasShadow = true;
+        this.shadowBlur = 0;
+        this.asc = true;
+        this.differenceTop = 0;
+
+//        生成器属性配置
+        this.arcConfig = function (options) {
+            this.startAngle = options.startAngle;
+            this.lineWidth = options.lineWidth;
+            this.totalPieces = options.totalPieces ;
+            this.averageOfColorGradient = 112/options.totalPieces;
+            this.averageOfDegreeGradient = 2*Math.PI/options.totalPieces;
+            this.startColor = options.startColor;
+            this.totalColor = options.totalColor;
+            this.cXOfArc = options.cXOfArc;
+            this.cYOfArc = options.cYOfArc;
+            this.radius = options.radius;
+            if (this.totalPieces == 4) {
+                this.hasShadow = true;
+            }
+        }
+
+//       360度圆弧生成器
+        this.build = function (startAngle) {
+
+            this.startAngle = startAngle;
+
+//
+
+            if (this.hasShadow && this.asc) {
+                this.shadowBlur = this.shadowBlur+1
+                if (this.shadowBlur == 50) {
+                    this.asc = false;
+                }
+            }
+            if (this.hasShadow && !this.asc) {
+                this.shadowBlur = this.shadowBlur-1;
+                if (this.shadowBlur == 0) {
+                    this.asc = true;
+                }
+            }
+            if (this.differenceTop != 0) {
+                this.differenceTop = this.differenceTop - Math.PI*2/200
+            }
+            if (this.differenceTop < 0 ) {
+                this.differenceTop == 0;
+//                player.load();
+                if (this.totalPieces == 4)
+                    animationOfArc.rotateAngle.yearRotateAngle = 0;
+                if (this.totalPieces == 12)
+                    animationOfArc.rotateAngle.monthRotateAngle = 0;
+                if (this.totalPieces == 7)
+                    animationOfArc.rotateAngle.dateRotateAngle = 0;
+                if (this.totalPieces == 24)
+                    animationOfArc.rotateAngle.hourRotateAngle = 0;
+            }
+
+            for (var i = 0; i<this.totalPieces; i++) {
+
+                context_canvasOfMemory.beginPath();
+                if (this.totalPieces == 4 && this.hasShadow) {
+                    context_canvasOfMemory.shadowBlur = this.shadowBlur;
+                    context_canvasOfMemory.shadowColor = '#00ff00';
+                }else{
+                    context_canvasOfMemory.shadowBlur = 0;
+                }
+
+//                context_canvasOfMemory.shadowBlur
+                context_canvasOfMemory.arc(this.cXOfArc, this.cYOfArc, this.radius, this.startAngle+0.0025, this.startAngle+this.averageOfDegreeGradient-0.0025,false);
+                context_canvasOfMemory.lineWidth = this.lineWidth;
+                context_canvasOfMemory.strokeStyle = '#'+utils.jsRGB(this.pieceColor.R, this.pieceColor.G, this.pieceColor.B);
+                context_canvasOfMemory.stroke();
+                this.startAngle = this.startAngle + this.averageOfDegreeGradient;
+                this.pieceColor.R  = this.pieceColor.R + parseInt(this.averageOfColorGradient);
+                this.pieceColor.G  = this.pieceColor.G + parseInt(this.averageOfColorGradient);
+                this.pieceColor.B  = this.pieceColor.B + parseInt(this.averageOfColorGradient);
+
+            }
+            this.pieceColor.R = this.startColor.R;
+            this.pieceColor.G = this.startColor.G;
+            this.pieceColor.B = this.startColor.B;
+
+        }
+    }
+
+    var drawTimePickerInit = function () {
+        //切割年份圆弧
+        arcGeneratorOfYear = new arcGenerator();
+        arcGeneratorOfYear.arcConfig({
+            totalPieces: 4,
+            startColor: {R: 127, G: 122, B: 143},
+            totalColor: 122,
+            cXOfArc: 600,
+            cYOfArc: 400,
+            radius: 200,
+            lineWidth: 50
+//            startAngle: configs.drawYearOfArc.startAngle
+        });
+
+
+
+    //    切割月份圆弧
+        arcGeneratorOfMonth = new arcGenerator();
+        arcGeneratorOfMonth.arcConfig({
+            totalPieces: 12,
+            startColor: {R: 127, G: 122, B: 143},
+            totalColor: 122,
+            cXOfArc: 600,
+            cYOfArc: 400,
+            radius: 149,
+            lineWidth: 50
+//            startAngle: configs.drawMonthOfArc.startAngle
+        });
+
+
+    //    切割星期圆弧
+        arcGeneratorOfDate  = new arcGenerator();
+        arcGeneratorOfDate.arcConfig({
+            totalPieces: 7,
+            startColor: {R: 127, G: 122, B: 143},
+            totalColor: 122,
+            cXOfArc: 600,
+            cYOfArc: 400,
+            radius: 108,
+            lineWidth: 30
+//            startAngle: configs.drawDateOfArc.startAngle
+        });
+
+    // 切割小时圆弧
+        arcGeneratorOfHour = new arcGenerator();
+        arcGeneratorOfHour.arcConfig({
+            totalPieces: 24,
+            startColor: {R: 127, G: 122, B: 143},
+            totalColor: 122,
+            cXOfArc: 600,
+            cYOfArc: 400,
+            radius: 77,
+            lineWidth: 30
+//            startAngle: configs.drawHourOfArc.startAngle
+        });
+
+    }
+    var drawTimePicker = function (configs) {
+        arcGeneratorOfYear.build(configs.drawYearOfArc.startAngle);
+        arcGeneratorOfMonth.build(configs.drawMonthOfArc.startAngle);
+        arcGeneratorOfDate.build(configs.drawDateOfArc.startAngle);
+        arcGeneratorOfHour.build(configs.drawHourOfArc.startAngle);
+    }
+
+
+
+
+
+
+
+
+
+
+//   ----------------------------------------------画日期----------------------------------------
+
+//    文字生成器
+    var textGenerator = function () {
+        this.startAngle = 0;
+        this.numberArray = ['2010', '2011', '2012', '2009'];
+        this.averageOfDegreeGradient = Math.PI*2/this.numberArray.length;
+        this.radius = 200;
+        this.fontSize = 30;
+        this.cXOfArc = 600;
+        this.cYOfArc = 400;
+        this.textConfig = function (options) {
+            this.numberArray = options.numberArray;
+            this.averageOfDegreeGradient = Math.PI*2/this.numberArray.length;
+            this.radius = options.radius;
+            this.fontSize = options.fontSize;
+            this.cXOfArc = options.cXOfArc;
+            this.cYOfArc = options.cYOfArc;
+        }
+        this.build = function (startAngle) {
+            this.startAngle = startAngle
+            for (var i = 0;i<this.numberArray.length;i++) {
+                contextNumberOfMemory.translate(this.cXOfArc, this.cYOfArc)
+                if (i == 0) {
+                    contextNumberOfMemory.rotate(this.averageOfDegreeGradient/2+startAngle);
+                }else{
+                    contextNumberOfMemory.rotate(this.averageOfDegreeGradient/2+startAngle+(this.averageOfDegreeGradient)*i);
+                }
+
+
+                contextNumberOfMemory.translate(-this.cXOfArc, -this.cYOfArc);
+                contextNumberOfMemory.textAlign = 'center';
+                contextNumberOfMemory.font = "normal lighter "+this.fontSize+"px cursive";
+                contextNumberOfMemory.fillText(this.numberArray[i], this.cXOfArc, this.cYOfArc - this.radius + 10);
+                if (i == 0) {
+                    contextNumberOfMemory.translate(this.cXOfArc, this.cYOfArc)
+                    contextNumberOfMemory.rotate(-(this.averageOfDegreeGradient/2+startAngle))
+                    contextNumberOfMemory.translate(-this.cXOfArc, -this.cYOfArc);
+                }else{
+                    contextNumberOfMemory.translate(this.cXOfArc, this.cYOfArc)
+                    contextNumberOfMemory.rotate(-(this.averageOfDegreeGradient/2+startAngle+(this.averageOfDegreeGradient)*i));
+                    contextNumberOfMemory.translate(-this.cXOfArc, -this.cYOfArc);
+                }
+
+            }
+        }
+    }
+ var drawTextInit = function () {
+     textGeneratorOfYear = new textGenerator();
+     textGeneratorOfYear.textConfig({
+         numberArray:['2010', '2011', '2012', '2009'],
+         radius:200,
+         fontSize:30,
+         cXOfArc:600,
+         cYOfArc:400
+     });
+     textGeneratorOfMonth = new textGenerator();
+     textGeneratorOfMonth.textConfig({
+         numberArray:['2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '1'],
+         radius:149,
+         fontSize:20,
+         cXOfArc:600,
+         cYOfArc:400
+     });
+     textGeneratorOfDate = new textGenerator();
+     textGeneratorOfDate.textConfig({
+         numberArray:['Mon', 'Tue', 'Web', 'Thu', 'Fri', 'Sat', 'Sun'],
+         radius:108,
+         fontSize:20,
+         cXOfArc:600,
+         cYOfArc:400
+     })
+     textGeneratorOfHour = new textGenerator();
+     textGeneratorOfHour.textConfig({
+         numberArray:['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24'],
+         radius:77,
+         fontSize:10,
+         cXOfArc:600,
+         cYOfArc:400
+     })
+ }
+
+var drawText = function (configs) {
+    textGeneratorOfYear.build(configs.drawYearOfText.startAngle);
+    textGeneratorOfMonth.build(configs.drawMonthOfText.startAngle);
+    textGeneratorOfDate.build(configs.drawDateOfText.startAngle);
+    textGeneratorOfHour.build(configs.drawHourOfText.startAngle);
+}
+
+///--------------------------------------------------------点击事件处理-------------------------------------
+    canvasNumber.addEventListener('click', function (e) {
+        var p = getEventPosition(e);
+
+//        player.play();
+//        player.pl
+        switch (getClickPositionArc(p)) {
+            case 1:clickAnimation(arcGeneratorOfYear.startAngle,arcGeneratorOfYear.averageOfDegreeGradient,1,p);break;
+            case 2:clickAnimation(arcGeneratorOfMonth.startAngle,arcGeneratorOfMonth.averageOfDegreeGradient,2,p);break;
+            case 3:clickAnimation(arcGeneratorOfDate.startAngle,arcGeneratorOfDate.averageOfDegreeGradient,3,p);break;
+            case 4:clickAnimation(arcGeneratorOfHour.startAngle,arcGeneratorOfHour.averageOfDegreeGradient,4,p);break;
+        }
+    })
+    function clickAnimation (startAngle,averageOfDegreeGradient,circleNumber,p) {
+        var position = getClickPositionInArc(p);
+        switch (circleNumber) {
+            case 1:contextOfDateShow.clearRect(900,400,200,60);
+                contextOfDateShow.font = "normal lighter 50px cursive";
+                contextOfDateShow.fillStyle = '#'+utils.jsRGB(127,122,143);
+                contextOfDateShow.fillText(textGeneratorOfYear.numberArray[position]+'年',900,450);break;
+            case 2:contextOfDateShow.clearRect(900,460,200,50);
+                contextOfDateShow.font = "normal lighter 50px cursive";
+                var gl = contextOfDateShow.createLinearGradient(900,600,900,700);
+                gl.addColorStop(0, 'rgb(127,122,143)');
+                gl.addColorStop(0.5, 'rgb(180,170,193)');
+                gl.addColorStop(1, 'rgb(255,255,255)');
+
+                contextOfDateShow.fillStyle = gl;
+                contextOfDateShow.fillText(textGeneratorOfMonth.numberArray[position]+'月',900,500);break;
+            case 3:contextOfDateShow.clearRect(900,510,500,60);
+                contextOfDateShow.font = "normal lighter 50px cursive";
+                var gl = contextOfDateShow.createLinearGradient(900,600,900,900);
+                gl.addColorStop(0, 'rgb(127,122,143)');
+                gl.addColorStop(0.5, 'rgb(180,170,193)');
+                gl.addColorStop(1, 'rgb(255,255,255)');
+
+                contextOfDateShow.fillStyle = gl;
+                contextOfDateShow.fillText(textGeneratorOfDate.numberArray[position],900,550);break;break;
+            case 4:contextOfDateShow.clearRect(900,550,500,60);
+                contextOfDateShow.font = "normal lighter 50px cursive";
+                var gl = contextOfDateShow.createLinearGradient(900,600,900,1100);
+                gl.addColorStop(0, 'rgb(127,122,143)');
+                gl.addColorStop(0.5, 'rgb(180,170,193)');
+                gl.addColorStop(1, 'rgb(255,255,255)');
+
+                contextOfDateShow.fillStyle = gl;
+                contextOfDateShow.fillText(textGeneratorOfHour.numberArray[position]+'日',900,600);break;break;
+        }
+            var positionAngle = (startAngle - Math.PI * 2) + (position + 1) * averageOfDegreeGradient - averageOfDegreeGradient / 2;
+
+        if (positionAngle>Math.PI*2)
+            positionAngle = positionAngle - Math.PI*2;
+        if ((positionAngle>=0 && positionAngle<=Math.PI/2) || (positionAngle>=Math.PI*3/2 && positionAngle<=Math.PI*2)) {
+            if (positionAngle>=0 && positionAngle<=Math.PI/2)
+                var differenceToTop = positionAngle+Math.PI*2-Math.PI*3/2;
+            if (positionAngle>=Math.PI*3/2 && positionAngle<=Math.PI*2)
+                var differenceToTop = positionAngle-Math.PI*3/2;
+            switch (circleNumber) {
+                case 1:
+                        arcGeneratorOfYear.differenceTop = differenceToTop;
+                    animationOfArc.rotateAngle.yearRotateAngle = -Math.PI*2/200;break;
+                case 2:
+                    arcGeneratorOfMonth.differenceTop = differenceToTop;
+                    animationOfArc.rotateAngle.monthRotateAngle = -Math.PI*2/200;break;
+                case 3:
+                    arcGeneratorOfDate.differenceTop = differenceToTop;
+                    animationOfArc.rotateAngle.dateRotateAngle = -Math.PI*2/200;break;
+                case 4:
+                    arcGeneratorOfHour.differenceTop = differenceToTop;
+                    animationOfArc.rotateAngle.hourRotateAngle = -Math.PI*2/200;break;
+            }
+
+        }else{
+            var differenceToTop = Math.PI*3/2 - positionAngle;
+            switch (circleNumber) {
+                case 1:
+                    arcGeneratorOfYear.differenceTop = differenceToTop;
+                    animationOfArc.rotateAngle.yearRotateAngle = Math.PI*2/200;break;
+                case 2:
+                    arcGeneratorOfMonth.differenceTop = differenceToTop;
+                    animationOfArc.rotateAngle.monthRotateAngle = Math.PI*2/200;break;
+                case 3:
+                    arcGeneratorOfDate.differenceTop = differenceToTop;
+                    animationOfArc.rotateAngle.dateRotateAngle = Math.PI*2/200;break;
+                case 4:
+                    arcGeneratorOfHour.differenceTop = differenceToTop;
+                    animationOfArc.rotateAngle.hourRotateAngle = Math.PI*2/200;break;
+            }
+
+        };
+    }
+    function getEventPosition(ev){
+
+        var x, y;
+
+        if (ev.layerX || ev.layerX == 0) {
+
+            x = ev.layerX;
+
+            y = ev.layerY;
+
+        } else if (ev.offsetX || ev.offsetX == 0) { // Opera
+
+            x = ev.offsetX;
+
+            y = ev.offsetY;
+
+        }
+
+        return {x: x, y: y};
+
+    }
+        function getClickPositionArc (p) {
+            if (Math.pow((p.x-600),2)+Math.pow((p.y-400),2)>=Math.pow(175,2) && Math.pow((p.x-600),2)+Math.pow((p.y-400),2)<=Math.pow(225,2))
+            return 1;
+            if (Math.pow((p.x-600),2)+Math.pow((p.y-400),2)>=Math.pow(124,2) && Math.pow((p.x-600),2)+Math.pow((p.y-400),2)<=Math.pow(174,2))
+            return 2;
+            if (Math.pow((p.x-600),2)+Math.pow((p.y-400),2)>=Math.pow(93,2) && Math.pow((p.x-600),2)+Math.pow((p.y-400),2)<=Math.pow(123,2))
+            return 3;
+            if (Math.pow((p.x-600),2)+Math.pow((p.y-400),2)>=Math.pow(62,2) && Math.pow((p.x-600),2)+Math.pow((p.y-400),2)<=Math.pow(92,2))
+            return 4
+        }
+        function getClickPositionInArc (p) {
+            switch (getClickPositionArc(p)) {
+                case 1:
+
+                    var difference = getDifference(p, arcGeneratorOfYear.startAngle - Math.PI*2)
+                       var position = parseInt(difference/arcGeneratorOfYear.averageOfDegreeGradient);
+                       return position;break;
+                case 2:
+                    var difference = getDifference(p, arcGeneratorOfMonth.startAngle - Math.PI*2);
+                    var position = parseInt(difference/arcGeneratorOfMonth.averageOfDegreeGradient);
+                    return position;break;
+                case 3:var difference = getDifference(p, arcGeneratorOfDate.startAngle - Math.PI*2);
+                    var position = parseInt(difference/arcGeneratorOfDate.averageOfDegreeGradient);
+                    return position;break;
+                case 4:
+                    var difference = getDifference(p, arcGeneratorOfHour.startAngle - Math.PI*2);
+                    var position = parseInt(difference/arcGeneratorOfHour.averageOfDegreeGradient);
+                    return position;break;
+            }
+        }
+        function getArcTan(p) {
+
+            if (p.y-400>0 && p.x-600>0) {
+                return Math.atan((p.y-400)/(p.x-600));
+            }
+            if (p.y-400>0 && p.x-600<0) {
+                return Math.atan((p.y-400)/(p.x-600)) + Math.PI;
+            }
+            if (p.y-400<0 && p.x-600<0) {
+                return Math.atan((p.y-400)/(p.x-600)) + Math.PI;
+            }
+            if (p.y-400<0 && p.x-600>0) {
+                return Math.atan((p.y-400)/(p.x-600)) + Math.PI*2;
+            }
+
+        }
+        function getDifference(p, startAngle) {
+            if (startAngle > getArcTan(p)) {
+                return Math.PI*2 - (startAngle - getArcTan(p));
+            }
+            if (startAngle < getArcTan(p)) {
+                return getArcTan(p) - startAngle;
+            }
+        }
+
+
+
+
+
+
+//    -------------------------------------------------转动动画-------------------------------------------------
+    //    转动动画效果实现器
+    var animationOfArc = {
+        rotateAngle:{
+            yearRotateAngle:0,
+            monthRotateAngle:0,
+            dateRotateAngle:0,
+            hourRotateAngle:0
+        },
+        startAngle:null,
+        intervalId:0,
+        drawArc:drawTimePicker,
+        drawText:drawText,
+        animationConfig:function (options) {
+            this.rotateAngle.yearRotateAngle = options.rotateAngle.yearRotateAngle;
+            this.rotateAngle.monthRotateAngle = options.rotateAngle.monthRotateAngle;
+            this.rotateAngle.dateRotateAngle = options.rotateAngle.dateRotateAngle;
+            this.rotateAngle.hourRotateAngle = options.rotateAngle.hourRotateAngle;
+            this.startAngle = options.startAngle;
+
+        },
+        animation:function () {
+
+            context_canvasOfMemory.clearRect(0, 0 , canvasOfMemory.width, canvasOfMemory.height);
+            context_canvas.clearRect(0, 0, canvas.width, canvas.height);
+            contextNumber.clearRect(0, 0, canvasNumber.width, canvasNumber.height);
+            contextNumberOfMemory.clearRect(0, 0, canvasNumberOfMemory.width, canvasNumberOfMemory.height);
+            if (this.startAngle.yearStartAngle >= Math.PI*2) {
+                this.startAngle.yearStartAngle  = this.startAngle.yearStartAngle - Math.PI*2;
+            }
+            if (this.startAngle.monthStartAngle >= Math.PI*2) {
+                this.startAngle.monthStartAngle  = this.startAngle.monthStartAngle - Math.PI*2;
+            }
+            if (this.startAngle.dateStartAngle >= Math.PI*2) {
+                this.startAngle.dateStartAngle  = this.startAngle.dateStartAngle - Math.PI*2;
+            }
+            if (this.startAngle.hourStartAngle >= Math.PI*2) {
+                this.startAngle.hourStartAngle  = this.startAngle.hourStartAngle - Math.PI*2;
+            }
+            if (this.startAngle.yearStartAngle < 0) {
+                this.startAngle.yearStartAngle  = this.startAngle.yearStartAngle + Math.PI*2;
+            }
+            if (this.startAngle.monthStartAngle < 0) {
+                this.startAngle.monthStartAngle  = this.startAngle.monthStartAngle + Math.PI*2;
+            }
+            if (this.startAngle.dateStartAngle < 0) {
+                this.startAngle.dateStartAngle  = this.startAngle.dateStartAngle + Math.PI*2;
+            }
+            if (this.startAngle.hourStartAngle < 0) {
+                this.startAngle.hourStartAngle  = this.startAngle.hourStartAngle + Math.PI*2;
+            }
+            var configsOfArc = {
+                drawYearOfArc:{
+                    startAngle:this.startAngle.yearStartAngle
+                },
+                drawMonthOfArc:{
+                    startAngle:this.startAngle.monthStartAngle
+                },
+                drawDateOfArc:{
+                    startAngle:this.startAngle.dateStartAngle
+                },
+                drawHourOfArc:{
+                    startAngle:this.startAngle.hourStartAngle
+                }
+            }
+            var configsOfText = {
+                drawYearOfText:{
+                    startAngle:this.startAngle.yearStartAngle - Math.PI*3/2
+                },
+                drawMonthOfText:{
+                    startAngle:this.startAngle.monthStartAngle - Math.PI*3/2
+                },
+                drawDateOfText:{
+                    startAngle:this.startAngle.dateStartAngle - Math.PI*3/2
+                },
+                drawHourOfText:{
+                    startAngle:this.startAngle.hourStartAngle - Math.PI*3/2
+                }
+
+            }
+            this.drawArc(configsOfArc)
+            this.drawText(configsOfText)
+
+            this.startAngle.yearStartAngle = this.startAngle.yearStartAngle +this.rotateAngle.yearRotateAngle;
+            this.startAngle.monthStartAngle = this.startAngle.monthStartAngle +this.rotateAngle.monthRotateAngle;
+            this.startAngle.dateStartAngle = this.startAngle.dateStartAngle +this.rotateAngle.dateRotateAngle;
+            this.startAngle.hourStartAngle = this.startAngle.hourStartAngle +this.rotateAngle.hourRotateAngle;
+
+
+
+            context_canvas.drawImage(canvasOfMemory,0,0);
+            contextNumber.drawImage(canvasNumberOfMemory,0,0);
+        },
+        start:function () {
+
+            this.intervalId = setInterval('animationOfArc.animation()', 16)
+
+        },
+        stop:function () {
+
+            clearInterval(this.intervalId)
+        }
+
+    }
+
+    drawTimePickerInit();
+    drawTextInit();
+    animationOfArc.animationConfig({
+        startAngle:{
+            yearStartAngle:Math.PI*3/2,
+            monthStartAngle:Math.PI*3/2,
+            dateStartAngle:Math.PI*3/2,
+            hourStartAngle:Math.PI*3/2
+        },
+        rotateAngle:{
+            yearRotateAngle:0,
+            monthRotateAngle:0,
+            dateRotateAngle:0,
+            hourRotateAngle:0
+        }
+    })
+    animationOfArc.start();
+//    player.load();
+
+
+    //    drawTextInit()
+//drawText()
+</script>
+</body>
+        </html>
